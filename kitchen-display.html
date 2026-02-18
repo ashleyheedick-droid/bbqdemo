@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitchen Display | Smoke Sessions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 18px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0d0806;
+    color: #F5E6D3;
+    min-height: 100vh;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  .kds-header {
+    background: linear-gradient(135deg, #1a120e 0%, #221a14 100%);
+    border-bottom: 3px solid rgba(218,165,32,0.3);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .kds-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .kds-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    color: #DAA520;
+    line-height: 1;
+  }
+
+  .kds-header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .kds-clock {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.2rem;
+    color: #F5E6D3;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .order-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #E25822, #C41E3A);
+    color: #F5E6D3;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 14px;
+    border-radius: 22px;
+    box-shadow: 0 4px 12px rgba(226, 88, 34, 0.4);
+  }
+
+  .audio-toggle {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    border: 2px solid rgba(218,165,32,0.3);
+    background-color: #221a14;
+    color: #B8A08A;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .audio-toggle:hover {
+    border-color: #DAA520;
+    background-color: #2d2118;
+  }
+
+  .audio-toggle.active {
+    background: linear-gradient(135deg, #3E1A00, #8B4513);
+    border-color: #DAA520;
+    color: #F0C050;
+    box-shadow: 0 0 10px rgba(218,165,32,0.2);
+  }
+
+  /* ── Refresh Indicator ── */
+  .refresh-bar {
+    height: 3px;
+    background-color: #1a120e;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .refresh-bar-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #DAA520, #E25822);
+    transition: width 1s linear;
+  }
+
+  /* ── Columns Layout ── */
+  .kds-columns {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    min-height: calc(100vh - 80px);
+  }
+
+  @media (min-width: 900px) {
+    .kds-columns {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+  }
+
+  .kds-column {
+    border-right: 2px solid rgba(218,165,32,0.1);
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+  }
+
+  .kds-column:last-child {
+    border-right: none;
+  }
+
+  /* ── Column Headers ── */
+  .col-header {
+    padding: 12px 16px;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    text-align: center;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: sticky;
+    top: 76px;
+    z-index: 50;
+  }
+
+  .col-header-new {
+    background: linear-gradient(135deg, #3E1A00, #221a14);
+    color: #F0C050;
+    border-bottom: 3px solid #DAA520;
+  }
+
+  .col-header-progress {
+    background: linear-gradient(135deg, #3E1A00, #221a14);
+    color: #E25822;
+    border-bottom: 3px solid #E25822;
+  }
+
+  .col-header-ready {
+    background: linear-gradient(135deg, #1a3a1a, #221a14);
+    color: #4CAF50;
+    border-bottom: 3px solid #4CAF50;
+  }
+
+  .col-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 0.85rem;
+    background: rgba(255,255,255,0.1);
+  }
+
+  /* ── Column Body ── */
+  .col-body {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #0d0806;
+  }
+
+  .col-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    color: #8B7B6B;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-style: italic;
+    opacity: 0.6;
+  }
+
+  /* ── Order Card ── */
+  .order-card {
+    background-color: #221a14;
+    border-radius: 12px;
+    border: 2px solid rgba(218,165,32,0.15);
+    padding: 14px;
+    transition: all 0.3s ease;
+  }
+
+  .order-card:hover {
+    background-color: #2d2118;
+  }
+
+  .order-card.status-new {
+    border-left: 5px solid #DAA520;
+    animation: new-pulse 2s ease-in-out 3;
+  }
+
+  @keyframes new-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(218,165,32,0); }
+    50% { box-shadow: 0 0 16px 4px rgba(218,165,32,0.2); }
+  }
+
+  .order-card.status-in-progress {
+    border-left: 5px solid #E25822;
+  }
+
+  .order-card.status-ready {
+    border-left: 5px solid #4CAF50;
+  }
+
+  /* ── Order Header ── */
+  .order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .order-number {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.4rem;
+    letter-spacing: 2px;
+    color: #F0C050;
+    line-height: 1;
+  }
+
+  .order-card.status-in-progress .order-number {
+    color: #E25822;
+  }
+
+  .order-card.status-ready .order-number {
+    color: #4CAF50;
+  }
+
+  .order-time-info {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .order-time-placed {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #B8A08A;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .order-elapsed {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .elapsed-ok {
+    color: #B8A08A;
+  }
+
+  .elapsed-warn {
+    color: #FFC107;
+  }
+
+  .elapsed-critical {
+    color: #C41E3A;
+    animation: blink-critical 1s ease-in-out infinite;
+  }
+
+  @keyframes blink-critical {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ── Customer Name ── */
+  .order-customer {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #F5E6D3;
+    margin-bottom: 8px;
+  }
+
+  /* ── Items List ── */
+  .order-items {
+    list-style: none;
+    margin-bottom: 10px;
+    padding: 0;
+  }
+
+  .order-items li {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #F5E6D3;
+    padding: 3px 0;
+    padding-left: 18px;
+    position: relative;
+  }
+
+  .order-items li::before {
+    content: '\2022';
+    position: absolute;
+    left: 0;
+    color: #DAA520;
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+
+  /* ── Special Instructions ── */
+  .order-special {
+    background: rgba(226, 88, 34, 0.12);
+    border: 1px solid rgba(226, 88, 34, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .order-special-icon {
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    margin-top: 1px;
+  }
+
+  .order-special-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #E25822;
+    line-height: 1.3;
+  }
+
+  /* ── Action Buttons ── */
+  .order-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .order-btn {
+    flex: 1;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    min-height: 56px;
+    transition: all 0.2s ease;
+  }
+
+  .order-btn:active {
+    transform: scale(0.96);
+  }
+
+  .btn-start {
+    background: linear-gradient(135deg, #E25822, #C41E3A);
+    color: #F5E6D3;
+    box-shadow: 0 4px 12px rgba(226, 88, 34, 0.3);
+  }
+
+  .btn-start:hover {
+    background: linear-gradient(135deg, #ff6b35, #d4213f);
+    box-shadow: 0 6px 16px rgba(226, 88, 34, 0.4);
+  }
+
+  .btn-ready {
+    background: linear-gradient(135deg, #DAA520, #B8860B);
+    color: #1a120e;
+    box-shadow: 0 4px 12px rgba(218,165,32,0.3);
+  }
+
+  .btn-ready:hover {
+    background: linear-gradient(135deg, #F0C050, #DAA520);
+    box-shadow: 0 6px 16px rgba(218,165,32,0.4);
+  }
+
+  .btn-complete {
+    background: linear-gradient(135deg, #4CAF50, #388E3C);
+    color: #F5E6D3;
+    box-shadow: 0 4px 12px rgba(76,175,80,0.3);
+  }
+
+  .btn-complete:hover {
+    background: linear-gradient(135deg, #66BB6A, #43A047);
+    box-shadow: 0 6px 16px rgba(76,175,80,0.4);
+  }
+
+  /* ── Separator on mobile ── */
+  @media (max-width: 899px) {
+    .kds-column {
+      border-right: none;
+      border-bottom: 3px solid rgba(218,165,32,0.1);
+    }
+
+    .kds-column:last-child {
+      border-bottom: none;
+    }
+
+    .col-header {
+      position: relative;
+      top: auto;
+    }
+  }
+
+  /* ── Toast ── */
+  .kds-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: linear-gradient(135deg, #3E1A00, #221a14);
+    border: 2px solid #DAA520;
+    color: #F0C050;
+    padding: 16px 32px;
+    border-radius: 12px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.35s ease;
+    pointer-events: none;
+  }
+
+  .kds-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Audio beep visual ── */
+  .audio-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #DAA520, #E25822, #DAA520);
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .audio-flash.active {
+    opacity: 1;
+    animation: flash-bar 0.5s ease-out;
+  }
+
+  @keyframes flash-bar {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Audio flash bar -->
+<div class="audio-flash" id="audioFlash"></div>
+
+<!-- Header -->
+<header class="kds-header">
+  <div class="kds-header-left">
+    <a href="index.html" style="color:#B8A08A;font-family:'Montserrat',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:8px 14px;border:1px solid rgba(218,165,32,0.2);border-radius:8px;transition:all 0.2s;" onmouseover="this.style.color='#DAA520';this.style.borderColor='#DAA520'" onmouseout="this.style.color='#B8A08A';this.style.borderColor='rgba(218,165,32,0.2)'">&larr; Site</a>
+    <div class="kds-title">Kitchen Display</div>
+    <div class="order-count-badge" id="totalOrderCount" title="Total active orders">0</div>
+  </div>
+  <div class="kds-header-right">
+    <button class="audio-toggle" id="audioToggle" onclick="toggleAudio()" title="Toggle audio alerts">
+      <span id="audioIcon">&#128276;</span>
+    </button>
+    <div class="kds-clock" id="liveClock">--:--:--</div>
+  </div>
+</header>
+
+<!-- Refresh progress bar -->
+<div class="refresh-bar">
+  <div class="refresh-bar-fill" id="refreshBar"></div>
+</div>
+
+<!-- Columns -->
+<div class="kds-columns">
+  <!-- NEW -->
+  <div class="kds-column">
+    <div class="col-header col-header-new">
+      New Orders <span class="col-count" id="countNew">0</span>
+    </div>
+    <div class="col-body" id="colNew">
+      <div class="col-empty">No new orders</div>
+    </div>
+  </div>
+
+  <!-- IN PROGRESS -->
+  <div class="kds-column">
+    <div class="col-header col-header-progress">
+      In Progress <span class="col-count" id="countProgress">0</span>
+    </div>
+    <div class="col-body" id="colProgress">
+      <div class="col-empty">No orders in progress</div>
+    </div>
+  </div>
+
+  <!-- READY -->
+  <div class="kds-column">
+    <div class="col-header col-header-ready">
+      Ready <span class="col-count" id="countReady">0</span>
+    </div>
+    <div class="col-body" id="colReady">
+      <div class="col-empty">No orders ready</div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="kds-toast" id="kdsToast"></div>
+
+<script src="holysmokes-api.js"></script>
+<script>
+(function() {
+  'use strict';
+
+  var LS_KEY = 'holysmokes_kds_orders';
+  var audioEnabled = false;
+  var orders = [];
+  var refreshInterval = 10; // seconds
+  var refreshCounter = 0;
+  var refreshTimer = null;
+  var previousOrderCount = 0;
+
+  // ── Audio Context for bell sound ──
+  var audioCtx = null;
+
+  function playBell() {
+    if (!audioEnabled) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      // Two-tone bell
+      [880, 1100].forEach(function(freq, i) {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.15 + 0.5);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + i * 0.15);
+        osc.stop(audioCtx.currentTime + i * 0.15 + 0.5);
+      });
+      // Visual flash
+      var flash = document.getElementById('audioFlash');
+      flash.classList.remove('active');
+      void flash.offsetWidth;
+      flash.classList.add('active');
+    } catch (e) { /* silent fail */ }
+  }
+
+  // ── Toggle audio ──
+  window.toggleAudio = function() {
+    audioEnabled = !audioEnabled;
+    var btn = document.getElementById('audioToggle');
+    var icon = document.getElementById('audioIcon');
+    btn.classList.toggle('active', audioEnabled);
+    icon.innerHTML = audioEnabled ? '&#128276;' : '&#128263;';
+    if (audioEnabled) {
+      // Initialize audio context on user gesture
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      playBell();
+      showToast('Audio alerts ON');
+    } else {
+      showToast('Audio alerts OFF');
+    }
+  };
+
+  // ── Sample orders ──
+  function generateSampleOrders() {
+    var now = Date.now();
+    return [
+      {
+        id: 'ORD001',
+        number: '#001',
+        customer: 'Mike R.',
+        items: ['Brisket Plate (1/2 lb)', 'Mac & Cheese', 'Sweet Tea'],
+        special: '',
+        status: 'new',
+        placedAt: now - (4 * 60 * 1000)
+      },
+      {
+        id: 'ORD002',
+        number: '#002',
+        customer: 'Sarah & Tom',
+        items: ['Pitmaster\'s Combo', 'Pulled Pork Sandwich', 'Baked Beans', 'Coleslaw', '2x Lemonade'],
+        special: 'No onions on the sandwich. Sauce on the side.',
+        status: 'new',
+        placedAt: now - (2 * 60 * 1000)
+      },
+      {
+        id: 'ORD003',
+        number: '#003',
+        customer: 'Dave K.',
+        items: ['Beef Ribs (full rack)', 'Jalapeno Cornbread', 'Collard Greens'],
+        special: 'Extra napkins. Birthday dinner!',
+        status: 'in-progress',
+        placedAt: now - (12 * 60 * 1000)
+      },
+      {
+        id: 'ORD004',
+        number: '#004',
+        customer: 'Amanda L.',
+        items: ['Turkey Breast Plate', 'Potato Salad', 'Pecan Pie'],
+        special: '',
+        status: 'in-progress',
+        placedAt: now - (8 * 60 * 1000)
+      }
+    ];
+  }
+
+  // ── Load orders (localStorage + API merge) ──
+  function loadOrders() {
+    // Load from localStorage first (fast)
+    try {
+      var stored = localStorage.getItem(LS_KEY);
+      if (stored) {
+        orders = JSON.parse(stored);
+        var cutoff = Date.now() - (5 * 60 * 1000);
+        orders = orders.filter(function(o) {
+          return o.status !== 'completed' || (o.completedAt && o.completedAt > cutoff);
+        });
+      } else {
+        orders = generateSampleOrders();
+      }
+    } catch (e) {
+      orders = generateSampleOrders();
+    }
+    saveOrders();
+
+    // Also pull from Google Sheets API and merge any new orders
+    if (typeof HolySmokesBBQ !== 'undefined' && HolySmokesBBQ.getOrders) {
+      HolySmokesBBQ.getOrders(function(apiOrders) {
+        if (!apiOrders || !apiOrders.length) return;
+        var existingIds = {};
+        orders.forEach(function(o) { existingIds[o.id] = true; existingIds[o.number] = true; });
+        var added = false;
+        apiOrders.forEach(function(ao) {
+          if (ao.status === 'completed' || ao.status === 'cancelled') return;
+          if (existingIds[ao.id] || existingIds[ao.number]) return;
+          // Convert API order to KDS format
+          orders.push({
+            id: ao.id,
+            number: ao.number || ao.id,
+            customer: ao.customer || '',
+            items: typeof ao.items === 'string' ? ao.items.split(', ') : (ao.items || []),
+            special: ao.special || '',
+            status: ao.status || 'new',
+            placedAt: ao.createdAt ? new Date(ao.createdAt).getTime() : Date.now(),
+            phone: ao.phone || '',
+            pickupTime: ao.pickupTime || '',
+            total: Number(ao.total) || 0
+          });
+          added = true;
+        });
+        if (added) {
+          saveOrders();
+          renderAll();
+        }
+      });
+    }
+  }
+
+  // ── Save orders ──
+  function saveOrders() {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(orders));
+    } catch (e) { /* silent */ }
+  }
+
+  // ── Elapsed time formatting ──
+  function formatElapsed(ms) {
+    var totalSec = Math.floor(ms / 1000);
+    var min = Math.floor(totalSec / 60);
+    var sec = totalSec % 60;
+    return min + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function getElapsedClass(ms) {
+    var min = ms / 60000;
+    if (min > 20) return 'elapsed-critical';
+    if (min > 10) return 'elapsed-warn';
+    return 'elapsed-ok';
+  }
+
+  function formatTimePlaced(ts) {
+    var d = new Date(ts);
+    var h = d.getHours();
+    var m = d.getMinutes();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+  }
+
+  // ── Escape HTML ──
+  function esc(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ── Render order card ──
+  function renderCard(order) {
+    var now = Date.now();
+    var elapsed = now - order.placedAt;
+    var elapsedClass = getElapsedClass(elapsed);
+
+    var html = '<div class="order-card status-' + order.status + '" data-id="' + order.id + '">';
+    html += '<div class="order-top">';
+    html += '  <div class="order-number">' + esc(order.number) + '</div>';
+    html += '  <div class="order-time-info">';
+    html += '    <div class="order-time-placed">' + formatTimePlaced(order.placedAt) + '</div>';
+    html += '    <div class="order-elapsed ' + elapsedClass + '">' + formatElapsed(elapsed) + '</div>';
+    html += '  </div>';
+    html += '</div>';
+
+    html += '<div class="order-customer">' + esc(order.customer) + '</div>';
+
+    html += '<ul class="order-items">';
+    order.items.forEach(function(item) {
+      html += '<li>' + esc(item) + '</li>';
+    });
+    html += '</ul>';
+
+    if (order.special && order.special.trim()) {
+      html += '<div class="order-special">';
+      html += '  <span class="order-special-icon">&#9888;&#65039;</span>';
+      html += '  <span class="order-special-text">' + esc(order.special) + '</span>';
+      html += '</div>';
+    }
+
+    html += '<div class="order-actions">';
+    if (order.status === 'new') {
+      html += '<button class="order-btn btn-start" onclick="moveOrder(\'' + order.id + '\', \'in-progress\')">Start</button>';
+    } else if (order.status === 'in-progress') {
+      html += '<button class="order-btn btn-ready" onclick="moveOrder(\'' + order.id + '\', \'ready\')">Ready</button>';
+    } else if (order.status === 'ready') {
+      html += '<button class="order-btn btn-complete" onclick="moveOrder(\'' + order.id + '\', \'completed\')">Complete</button>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // ── Render all columns ──
+  function renderAll() {
+    var newOrders = orders.filter(function(o) { return o.status === 'new'; });
+    var progressOrders = orders.filter(function(o) { return o.status === 'in-progress'; });
+    var readyOrders = orders.filter(function(o) { return o.status === 'ready'; });
+
+    // Sort by oldest first (urgency)
+    newOrders.sort(function(a, b) { return a.placedAt - b.placedAt; });
+    progressOrders.sort(function(a, b) { return a.placedAt - b.placedAt; });
+    readyOrders.sort(function(a, b) { return a.placedAt - b.placedAt; });
+
+    var totalActive = newOrders.length + progressOrders.length + readyOrders.length;
+
+    document.getElementById('countNew').textContent = newOrders.length;
+    document.getElementById('countProgress').textContent = progressOrders.length;
+    document.getElementById('countReady').textContent = readyOrders.length;
+    document.getElementById('totalOrderCount').textContent = totalActive;
+
+    // NEW column
+    var colNew = document.getElementById('colNew');
+    if (newOrders.length === 0) {
+      colNew.innerHTML = '<div class="col-empty">No new orders</div>';
+    } else {
+      colNew.innerHTML = newOrders.map(renderCard).join('');
+    }
+
+    // IN PROGRESS column
+    var colProgress = document.getElementById('colProgress');
+    if (progressOrders.length === 0) {
+      colProgress.innerHTML = '<div class="col-empty">No orders in progress</div>';
+    } else {
+      colProgress.innerHTML = progressOrders.map(renderCard).join('');
+    }
+
+    // READY column
+    var colReady = document.getElementById('colReady');
+    if (readyOrders.length === 0) {
+      colReady.innerHTML = '<div class="col-empty">No orders ready</div>';
+    } else {
+      colReady.innerHTML = readyOrders.map(renderCard).join('');
+    }
+
+    // Check for new orders for audio alert
+    if (newOrders.length > previousOrderCount && previousOrderCount >= 0) {
+      playBell();
+    }
+    previousOrderCount = newOrders.length;
+  }
+
+  // ── Move order to next status ──
+  window.moveOrder = function(id, newStatus) {
+    for (var i = 0; i < orders.length; i++) {
+      if (orders[i].id === id) {
+        var oldStatus = orders[i].status;
+        orders[i].status = newStatus;
+        if (newStatus === 'completed') {
+          orders[i].completedAt = Date.now();
+        }
+        saveOrders();
+        renderAll();
+
+        // Sync status change to Google Sheets
+        if (typeof HolySmokesBBQ !== 'undefined' && HolySmokesBBQ.updateOrderStatus) {
+          HolySmokesBBQ.updateOrderStatus({ id: id, status: newStatus }, function() {});
+        }
+
+        var labels = {
+          'in-progress': 'started',
+          'ready': 'marked ready',
+          'completed': 'completed'
+        };
+        showToast(orders[i].number + ' ' + (labels[newStatus] || newStatus));
+        break;
+      }
+    }
+  };
+
+  // ── Live clock ──
+  function updateClock() {
+    var now = new Date();
+    var h = now.getHours();
+    var m = now.getMinutes();
+    var s = now.getSeconds();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    var timeStr = h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
+    document.getElementById('liveClock').textContent = timeStr;
+  }
+
+  // ── Auto-refresh with progress bar ──
+  function startRefreshCycle() {
+    refreshCounter = 0;
+    var bar = document.getElementById('refreshBar');
+
+    if (refreshTimer) clearInterval(refreshTimer);
+
+    refreshTimer = setInterval(function() {
+      refreshCounter++;
+      var pct = (refreshCounter / refreshInterval) * 100;
+      bar.style.width = pct + '%';
+
+      if (refreshCounter >= refreshInterval) {
+        refreshCounter = 0;
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        void bar.offsetWidth;
+        bar.style.transition = 'width 1s linear';
+
+        // Re-render to update elapsed times
+        renderAll();
+
+        // Also check localStorage for externally added orders
+        loadOrders();
+        renderAll();
+      }
+    }, 1000);
+  }
+
+  // ── Toast ──
+  function showToast(msg) {
+    var toast = document.getElementById('kdsToast');
+    toast.textContent = msg;
+    toast.classList.add('visible');
+    clearTimeout(window._kdsToastTimer);
+    window._kdsToastTimer = setTimeout(function() {
+      toast.classList.remove('visible');
+    }, 2500);
+  }
+
+  // ── Elapsed time live update (every second) ──
+  function updateElapsedTimes() {
+    var now = Date.now();
+    var elapsedEls = document.querySelectorAll('.order-elapsed');
+    var cards = document.querySelectorAll('.order-card');
+
+    cards.forEach(function(card) {
+      var id = card.getAttribute('data-id');
+      var order = orders.find(function(o) { return o.id === id; });
+      if (!order) return;
+
+      var elapsed = now - order.placedAt;
+      var elapsedEl = card.querySelector('.order-elapsed');
+      if (elapsedEl) {
+        elapsedEl.textContent = formatElapsed(elapsed);
+        elapsedEl.className = 'order-elapsed ' + getElapsedClass(elapsed);
+      }
+    });
+  }
+
+  // ── Init ──
+  loadOrders();
+  renderAll();
+  updateClock();
+
+  // Update clock every second
+  setInterval(updateClock, 1000);
+
+  // Update elapsed times every second
+  setInterval(updateElapsedTimes, 1000);
+
+  // Auto-refresh cycle
+  startRefreshCycle();
+
+  // Set initial previousOrderCount so we don't bell on first load
+  previousOrderCount = orders.filter(function(o) { return o.status === 'new'; }).length;
+
+})();
+</script>
+</body>
+</html>
